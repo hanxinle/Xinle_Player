@@ -1,0 +1,40 @@
+# Visual Studio 构建产物
+x64/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.dbmdl
+*.opendb
+
+# 中间文件（仅排除构建输出，不排除 FFmpeg lib 目录里的 .lib 导入库）
+*.obj
+*.tlog
+*.lastbuildstate
+*.idb
+*.pdb
+*.ilk
+*.exp
+*.res
+*.aps
+*.ncb
+*.sbr
+
+# 生成的文件
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# FFmpeg 压缩包（上游已解压，不需要重复存储）
+ffmpeg-master-latest-win64-gpl-shared.zip
+
+# FFmpeg 文档（12MB HTML，编译/运行不需要）
+ffmpeg-master-latest-win64-gpl-shared/doc/
+
+# 编辑器/系统文件
+.vs/
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~

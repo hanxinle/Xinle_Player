@@ -1,0 +1,93 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+
+# ========================
+# 王小民老师 C++ 编码规范
+# ========================
+
+# 缩进: 4 空格, 禁止使用 Tab.
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+
+# 大括号风格: K&R (左大括号与声明同行).
+BreakBeforeBraces: Attach
+
+# 列宽限制.
+ColumnLimit: 80
+
+# 访问控制标签不缩进 (public:/protected:/private: 与 class 对齐).
+AccessModifierOffset: -4
+
+# 指针与引用: 靠近变量名 (int *ptr, char &ref).
+PointerAlignment: Right
+ReferenceAlignment: Pointer
+
+# 空格控制.
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpacesInAngles: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# 初始化列表: 冒号前换行保持同行.
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+
+# 命名空间内容不缩进.
+NamespaceIndentation: None
+
+# 短函数: 只有空函数体才允许在同一行.
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: false
+
+# 空行.
+MaxEmptyLinesToKeep: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# 不对齐连续赋值/声明 (避免产生大段差异).
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignTrailingComments: false
+
+# 参数与实参: 尽可能打包在一行, 超过列宽再换行.
+BinPackParameters: true
+BinPackArguments: true
+
+# Include 排序: 对应头文件 -> C库 -> C++库 -> 其他.
+SortIncludes: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  # 1. 对应头文件 (与当前 .cpp 同名的 .h).
+  - Regex:           '^"[^/]+\.h"$'
+    Priority:        1
+    SortPriority:    1
+  # 2. C 标准库.
+  - Regex:           '^<[a-z_]+\.h>'
+    Priority:        2
+    SortPriority:    2
+  # 3. C++ 标准库.
+  - Regex:           '^<[a-z_]+>'
+    Priority:        3
+    SortPriority:    3
+  # 4. 第三方库 (Qt 等).
+  - Regex:           '^<Q[A-Z]'
+    Priority:        4
+    SortPriority:    4
+  # 5. 其他库.
+  - Regex:           '^<.*>'
+    Priority:        5
+    SortPriority:    5
+  # 6. 项目内其他头文件.
+  - Regex:           '^".*"$'
+    Priority:        6
+    SortPriority:    6
+
+# 注释: 不重新格式化已有注释.
+ReflowComments: false
+
+# 字符串: 不自动分割长字符串.
+BreakStringLiterals: false

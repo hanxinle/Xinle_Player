@@ -1,0 +1,66 @@
+{
+  "effects": [
+    {
+      "name": "无",
+      "frag": "",
+      "iterations": 1,
+      "params": []
+    },
+    {
+      "name": "反色",
+      "frag": ":/Player/shaders/invert.frag",
+      "iterations": 1,
+      "params": [
+        {
+          "name": "amount",
+          "label": "强度",
+          "type": "float",
+          "default": 100,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "name": "高斯模糊",
+      "frag": ":/Player/shaders/boxblur.frag",
+      "iterations": 2,
+      "params": [
+        {
+          "name": "radius",
+          "label": "半径",
+          "type": "float",
+          "default": 10,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "name": "horiz_blur",
+          "type": "bool",
+          "default": true
+        },
+        {
+          "name": "vert_blur",
+          "type": "bool",
+          "default": true
+        }
+      ]
+    },
+    {
+      "name": "遮罩",
+      "frag": ":/Player/shaders/mask.frag",
+      "iterations": 1,
+      "params": [
+        {
+          "name": "mask_blur",
+          "label": "羽化",
+          "type": "float",
+          "default": 10,
+          "min": 0,
+          "max": 100
+        }
+      ],
+      "setup": "mask"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="Player">
+        <file>shaders/common.vert</file>
+        <file>shaders/pass_through.frag</file>
+        <file>shaders/invert.frag</file>
+        <file>shaders/boxblur.frag</file>
+        <file>shaders/mask.frag</file>
+        <file>effects/effects.json</file>
+    </qresource>
+</RCC>
