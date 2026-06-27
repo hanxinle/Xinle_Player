@@ -1,5 +1,6 @@
 # Visual Studio 构建产物
 x64/
+.vs/
 *.user
 *.userosscache
 *.sln.docstates
@@ -7,7 +8,16 @@ x64/
 *.dbmdl
 *.opendb
 
-# 中间文件（仅排除构建输出，不排除 FFmpeg lib 目录里的 .lib 导入库）
+# 工业界化目录结构后的输出与中间目录
+Xinle_Player/bin/
+Xinle_Player/obj/
+
+# 第三方依赖（由 scripts/setup-deps.bat 从 deps/ 填充）
+deps/
+Xinle_Player/include/
+Xinle_Player/lib/
+
+# 中间文件
 *.obj
 *.tlog
 *.lastbuildstate
@@ -20,19 +30,12 @@ x64/
 *.ncb
 *.sbr
 
-# 生成的文件
+# Qt 生成文件
 moc_*.cpp
 qrc_*.cpp
 ui_*.h
 
-# FFmpeg 压缩包（上游已解压，不需要重复存储）
-ffmpeg-master-latest-win64-gpl-shared.zip
-
-# FFmpeg 文档（12MB HTML，编译/运行不需要）
-ffmpeg-master-latest-win64-gpl-shared/doc/
-
 # 编辑器/系统文件
-.vs/
 Thumbs.db
 Desktop.ini
 *.swp

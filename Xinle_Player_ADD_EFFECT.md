@@ -4,15 +4,16 @@
 
 ## 前置条件
 
-- 目标工程：`demos/Xinle_Player/Xinle_Player/Xinle_Player.vcxproj`。
+- 目标工程：`demos/PLAYER/Xinle_Player/Xinle_Player.vcxproj`。
 - 开发环境：Qt 6.9.1 + MSVC 2022 + OpenGL 3.3 Core Profile。
-- 本文档描述的“不修改 `player.qrc`”方式，指 **`.frag` 文件不编译进资源**，而是从文件系统加载。
+- 先运行 `scripts/setup-deps.bat`，将 FFmpeg 头文件和导入库复制到 `Xinle_Player/include/` 和 `Xinle_Player/lib/`。
+- 本文档描述的“不修改 `res/player.qrc`”方式，指 **`.frag` 文件不编译进资源**，而是从文件系统加载。
 
 ## 添加一个特效的三步法
 
 ### 第一步：编写 .frag 文件
 
-在 `demos/Xinle_Player/Xinle_Player/shaders/` 目录下新建一个 fragment shader 文件，例如 `my_effect.frag`。
+在 `demos/PLAYER/Xinle_Player/res/shaders/` 目录下新建一个 fragment shader 文件，例如 `my_effect.frag`。
 
 文件头固定为 `#version 330 core`，并包含以下标准输入输出：
 
@@ -65,14 +66,14 @@ void main() {
 
 ### 第二步：在 effects.json 中注册特效
 
-编辑 `demos/Xinle_Player/Xinle_Player/effects/effects.json`，在 `"effects"` 数组末尾添加一个新对象。
+编辑 `demos/PLAYER/Xinle_Player/res/effects/effects.json`，在 `"effects"` 数组末尾添加一个新对象。
 
 **关键：使用文件系统路径，而不是资源路径。**
 
 ```json
 {
   "name": "我的特效",
-  "frag": "shaders/my_effect.frag",
+  "frag": "res/shaders/my_effect.frag",
   "iterations": 1,
   "params": [
     {
@@ -92,7 +93,7 @@ void main() {
 | 字段 | 必填 | 说明 |
 |------|------|------|
 | `name` | 是 | 下拉框中显示的名称。 |
-| `frag` | 是 | `.frag` 文件的相对路径。相对于 VS 调试工作目录（默认是 `demos/Xinle_Player/Xinle_Player/`）。 |
+| `frag` | 是 | `.frag` 文件的相对路径。相对于 VS 调试工作目录（默认是 `demos/PLAYER/Xinle_Player/`）。 |
 | `iterations` | 否 | 渲染 pass 数，默认 1。多 pass 时可在 shader 中用 `iteration` 区分。 |
 | `params` | 否 | 参数数组，每个参数会作为同名 uniform 传入 shader。 |
 
@@ -110,7 +111,7 @@ void main() {
 ### 第三步：编译运行
 
 1. 在 Visual Studio 中重新编译 `Xinle_Player` 项目。
-   - 必须重新编译，因为 `effects.json` 本身通过 `player.qrc` 嵌入到了可执行文件中。
+   - 必须重新编译，因为 `effects.json` 本身通过 `res/player.qrc` 嵌入到了可执行文件中。
    - `.frag` 文件不嵌入，所以后续只改 shader 逻辑时**不需要**重新编译。
 2. 运行程序，打开一个视频文件。
 3. 在特效下拉框中选择新添加的特效名称。
@@ -118,23 +119,23 @@ void main() {
 
 ## 路径问题说明
 
-`"frag": "shaders/my_effect.frag"` 使用的是**相对路径**，解析依赖于程序运行时的当前工作目录。
+`"frag": "res/shaders/my_effect.frag"` 使用的是**相对路径**，解析依赖于程序运行时的当前工作目录。
 
-- **在 Visual Studio 中调试运行**：默认工作目录是项目目录 `demos/Xinle_Player/Xinle_Player/`，因此 `shaders/my_effect.frag` 会正确指向 `demos/Xinle_Player/Xinle_Player/shaders/my_effect.frag`。
-- **直接双击运行生成的 .exe**：如果 .exe 位于 `demos/Xinle_Player/Xinle_Player/x64/Debug/Xinle_Player.exe`，当前工作目录是 `x64/Debug/`，此时 `shaders/my_effect.frag` 会找不到文件。
+- **在 Visual Studio 中调试运行**：默认工作目录是项目目录 `demos/PLAYER/Xinle_Player/`，因此 `res/shaders/my_effect.frag` 会正确指向 `demos/PLAYER/Xinle_Player/res/shaders/my_effect.frag`。
+- **直接双击运行生成的 .exe**：如果 .exe 位于 `demos/PLAYER/Xinle_Player/bin/x64/Debug/Xinle_Player.exe`，当前工作目录是 `bin/x64/Debug/`，此时 `res/shaders/my_effect.frag` 会找不到文件。
 
-如果需要在 output 目录直接运行，可将 `shaders/` 文件夹复制到 .exe 同级目录，或者保持使用资源路径（`:/Player/shaders/my_effect.frag`）并将文件加入 `player.qrc`。
+如果需要在 output 目录直接运行，可将 `res/shaders/` 文件夹复制到 .exe 同级目录，或者保持使用资源路径（`:/Player/shaders/my_effect.frag`）并将文件加入 `res/player.qrc`。
 
 ## 本次实战示例：怀旧褐色调
 
 已添加的文件：
 
-- `demos/Xinle_Player/Xinle_Player/shaders/my_effect.frag`
-- `demos/Xinle_Player/Xinle_Player/effects/effects.json`（新增一个条目）
+- `demos/PLAYER/Xinle_Player/res/shaders/my_effect.frag`
+- `demos/PLAYER/Xinle_Player/res/effects/effects.json`（新增一个条目）
 
 未修改的文件：
 
-- `demos/Xinle_Player/Xinle_Player/player.qrc`
+- `demos/PLAYER/Xinle_Player/res/player.qrc`
 
 预期效果：画面整体偏黄褐色，滑块可调节强度。
 
@@ -151,8 +152,8 @@ void main() {
 ## 推荐的工作流程
 
 1. 先复制一份现有简单特效（如 `invert.frag`）作为起点。
-2. 改名为新文件，放到 `shaders/` 目录。
+2. 改名为新文件，放到 `res/shaders/` 目录。
 3. 先把它改成纯色输出（如 `FragColor = vec4(1.0, 0.0, 0.0, 1.0);`），验证通路正确。
 4. 逐步替换为真实特效逻辑。
-5. 在 `effects.json` 中添加配置条目，使用文件系统路径 `"frag": "shaders/xxx.frag"`。
+5. 在 `effects.json` 中添加配置条目，使用文件系统路径 `"frag": "res/shaders/xxx.frag"`。
 6. 编译运行验证。

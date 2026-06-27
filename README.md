@@ -14,23 +14,38 @@
 ## 项目结构
 
 ```
-demos/Xinle_Player/Xinle_Player/
-├── main.cpp              # 程序入口
-├── player.h/.cpp         # 主窗口：UI 布局、播放控制、特效选择
-├── glwidget.h/.cpp       # OpenGL 视频显示控件，负责纹理上传与特效渲染
-├── videodecoder.h/.cpp   # FFmpeg 7.x 音视频解码器
-├── effect.h/.cpp         # 通用 GLSL 特效封装
-├── effectregistry.h/.cpp # 从 effects.json 动态加载特效配置
-├── effects/
-│   └── effects.json      # 特效列表与参数定义
-├── shaders/              # GLSL shader 文件
-│   ├── common.vert       # 统一顶点 shader
-│   ├── pass_through.frag # 直接采样
-│   ├── invert.frag       # 反色特效
-│   ├── boxblur.frag      # 盒式模糊（2 pass）
-│   └── mask.frag         # 多边形遮罩
-└── Xinle_Player.vcxproj        # Visual Studio 工程文件
+Xinle_Player/                    # Visual Studio 工程目录
+├── Xinle_Player.vcxproj         # 工程文件
+├── bin/                         # 编译输出（.exe、.dll、.pdb）
+├── include/                     # 第三方头文件（由 scripts/setup-deps.bat 填充）
+├── lib/                         # 第三方导入库（由 scripts/setup-deps.bat 填充）
+├── src/                         # 源码
+│   ├── main.cpp                 # 程序入口
+│   ├── player.h/.cpp/.ui        # 主窗口：UI 布局、播放控制、特效选择
+│   ├── glwidget.h/.cpp          # OpenGL 视频显示控件，负责纹理上传与特效渲染
+│   ├── videodecoder.h/.cpp      # FFmpeg 7.x 音视频解码器
+│   ├── effect.h/.cpp            # 通用 GLSL 特效封装
+│   └── effectregistry.h/.cpp    # 从 effects.json 动态加载特效配置
+└── res/                         # Qt 资源
+    ├── player.qrc
+    ├── effects/
+    │   └── effects.json         # 特效列表与参数定义
+    └── shaders/                 # GLSL shader 文件
+        ├── common.vert          # 统一顶点 shader
+        ├── pass_through.frag    # 直接采样
+        ├── invert.frag          # 反色特效
+        ├── boxblur.frag         # 盒式模糊（2 pass）
+        └── mask.frag            # 多边形遮罩
 ```
+
+## 环境准备
+
+1. 安装 **Qt 6.9.1 + MSVC 2022** 与 Qt VS Tools。
+2. 将 `ffmpeg-master-latest-win64-gpl-shared` 解压到仓库根目录的 `deps/` 下。
+3. 运行 `scripts/setup-deps.bat`，把 FFmpeg 头文件和导入库复制到 `Xinle_Player/include/` 和 `Xinle_Player/lib/`。
+4. 打开 `Xinle_Player.sln`，选择 Release|x64 编译。
+
+编译后的可执行文件位于 `Xinle_Player/bin/x64/Release/Xinle_Player.exe`，运行时所需 DLL 会通过 PostBuildEvent 自动从 `deps/ffmpeg-master-latest-win64-gpl-shared/bin` 拷贝到输出目录。
 
 ## 架构流程
 
@@ -159,7 +174,7 @@ FBO[n]   ──▶ pass-through ──▶ 屏幕
 
 ### 编写自定义 .frag
 
-只需提供 fragment shader，顶点 shader 固定使用 `shaders/common.vert`：
+只需提供 fragment shader，顶点 shader 固定使用 `res/shaders/common.vert`：
 
 ```glsl
 #version 330 core
@@ -181,7 +196,7 @@ void main() {
 在 C++ 中加载并设置参数：
 
 ```cpp
-m_glWidget->loadEffect("shaders/my_effect.frag");
+m_glWidget->loadEffect("res/shaders/my_effect.frag");
 m_glWidget->setEffectParam("myUniform", 1.0f);
 m_glWidget->setEffectIterations(1);
 ```
@@ -196,12 +211,12 @@ m_glWidget->setEffectIterations(1);
 
 | 功能 | olive | Xinle_Player |
 |-----|---------|--------|
-| 视频解码 | `rendering/cacher.cpp` | `videodecoder.cpp` |
+| 视频解码 | `rendering/cacher.cpp` | `src/videodecoder.cpp` |
 | 音频输出 | `QAudioOutput` | `QAudioSink` |
-| OpenGL 显示 | `ui/viewerwidget.cpp` | `glwidget.cpp` |
-| 特效基类 | `effects/effect.cpp` | `effect.cpp` |
+| OpenGL 显示 | `ui/viewerwidget.cpp` | `src/glwidget.cpp` |
+| 特效基类 | `effects/effect.cpp` | `src/effect.cpp` |
 | Shader 加载 | `effects/effectloaders.cpp` + XML | 直接加载 `.frag` + 固定 `common.vert` |
-| FBO 渲染 | `rendering/renderfunctions.cpp` | `glwidget.cpp` 内 FBO ping-pong |
+| FBO 渲染 | `rendering/renderfunctions.cpp` | `src/glwidget.cpp` 内 FBO ping-pong |
 | 特效 XML 定义 | `effects/shaders/*.xml` | 当前简化为硬编码参数，后续可扩展 XML/JSON 描述 |
 
 ## 如何扩展

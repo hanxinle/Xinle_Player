@@ -60,8 +60,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <OutDir>$(SolutionDir)Xinle_Player\bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Xinle_Player\obj\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutDir>$(SolutionDir)Xinle_Player\bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Xinle_Player\obj\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
@@ -69,16 +73,16 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)ffmpeg-master-latest-win64-gpl-shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Xinle_Player\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)ffmpeg-master-latest-win64-gpl-shared\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Xinle_Player\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;avfilter.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(SolutionDir)ffmpeg-master-latest-win64-gpl-shared\bin\*.dll" "$(OutDir)" &gt; nul</Command>
+      <Command>xcopy /Y /D "$(SolutionDir)deps\ffmpeg-master-latest-win64-gpl-shared\bin\*.dll" "$(OutDir)" &gt; nul</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="Configuration">
@@ -89,32 +93,34 @@
       <ConformanceMode>true</ConformanceMode>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SolutionDir)ffmpeg-master-latest-win64-gpl-shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Xinle_Player\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)ffmpeg-master-latest-win64-gpl-shared\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Xinle_Player\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;avfilter.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(SolutionDir)ffmpeg-master-latest-win64-gpl-shared\bin\*.dll" "$(OutDir)" &gt; nul</Command>
+      <Command>xcopy /Y /D "$(SolutionDir)deps\ffmpeg-master-latest-win64-gpl-shared\bin\*.dll" "$(OutDir)" &gt; nul</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <QtRcc Include="player.qrc" />
-    <QtUic Include="player.ui" />
-    <QtMoc Include="player.h" />
-    <QtMoc Include="glwidget.h" />
-    <QtMoc Include="videodecoder.h" />
-    <ClCompile Include="player.cpp" />
-    <ClCompile Include="glwidget.cpp" />
-    <ClCompile Include="videodecoder.cpp" />
-    <ClCompile Include="effect.cpp" />
-    <ClCompile Include="effectregistry.cpp" />
-    <ClCompile Include="main.cpp" />
+    <QtRcc Include="res\player.qrc" />
+    <QtUic Include="src\player.ui" />
+    <QtMoc Include="src\player.h" />
+    <QtMoc Include="src\glwidget.h" />
+    <QtMoc Include="src\videodecoder.h" />
+    <ClCompile Include="src\player.cpp" />
+    <ClCompile Include="src\glwidget.cpp" />
+    <ClCompile Include="src\videodecoder.cpp" />
+    <ClCompile Include="src\effect.cpp" />
+    <ClCompile Include="src\effectregistry.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClInclude Include="src\effect.h" />
+    <ClInclude Include="src\effectregistry.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

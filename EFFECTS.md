@@ -1,8 +1,8 @@
-# 特效扩展指南（demos/Xinle_Player）
+# 特效扩展指南（Xinle_Player）
 
 ## 概述
 
-本文档仅适用于 `demos/Xinle_Player` 这个独立的 Qt6 + OpenGL 播放器演示工程，**不适用于主工程 olive**。
+本文档仅适用于 `Xinle_Player` 这个独立的 Qt6 + OpenGL 播放器演示工程，**不适用于主工程 olive**。
 
 - Xinle_Player 使用 `effects.json` + `.frag` 的极简特效描述方式。
 - olive 主工程沿用了 Olive 0.1 的 XML 特效描述（`effects/shaders/*.xml` + `*.frag`），从文件系统加载，**不需要修改 `.qrc` 文件**。
@@ -13,10 +13,10 @@
 
 | 组件 | 位置 | 格式 |
 |------|------|------|
-| Fragment Shader | `Xinle_Player/shaders/*.frag` | GLSL `#version 330 core` |
-| 特效描述 | `Xinle_Player/effects/effects.json` | JSON |
+| Fragment Shader | `Xinle_Player/res/shaders/*.frag` | GLSL `#version 330 core` |
+| 特效描述 | `Xinle_Player/res/effects/effects.json` | JSON |
 
-顶点 shader 固定为 `Xinle_Player/shaders/common.vert`，特效作者只关心 fragment shader。
+顶点 shader 固定为 `Xinle_Player/res/shaders/common.vert`，特效作者只关心 fragment shader。
 
 ---
 
@@ -27,15 +27,15 @@ Xinle_Player 支持两种特效加载方式，根据你的需求选择：
 | 方式 | 优点 | 缺点 | 适用场景 |
 |------|------|------|---------|
 | **资源路径**<br>`:/Player/shaders/xxx.frag` | shader 编译进可执行文件，分发时无需额外文件 | 每次改特效都要重新编译 | 内置特效、正式发布 |
-| **文件系统路径**<br>`shaders/xxx.frag` | 运行时修改 shader 立即生效，无需重新编译 | 分发时需要带上 shaders/ 目录 | 开发调试、快速迭代 |
+| **文件系统路径**<br>`res/shaders/xxx.frag` | 运行时修改 shader 立即生效，无需重新编译 | 分发时需要带上 res/shaders/ 目录 | 开发调试、快速迭代 |
 
-内置的反色/模糊/遮罩用的是**资源路径**（已在 `player.qrc` 中注册）。你扩展新特效时，**推荐用文件系统路径**（更灵活），这样可以避免改动 `player.qrc`。
+内置的反色/模糊/遮罩用的是**资源路径**（已在 `res/player.qrc` 中注册）。你扩展新特效时，**推荐用文件系统路径**（更灵活），这样可以避免改动 `res/player.qrc`。
 
 ---
 
 ## 第一步：编写 .frag 文件
 
-在 `Xinle_Player/shaders/` 下新建文件，格式为 `#version 330 core`。
+在 `Xinle_Player/res/shaders/` 下新建文件，格式为 `#version 330 core`。
 
 ### 系统注入的 uniform
 
@@ -62,7 +62,7 @@ in vec2 vTexCoord;    // 归一化纹理坐标 [0, 1]，经过 flipY 处理
 ### 最小示例
 
 ```glsl
-// shaders/my_effect.frag
+// res/shaders/my_effect.frag
 #version 330 core
 
 in vec2 vTexCoord;
@@ -110,20 +110,20 @@ uv.y = 1.0 - uv.y;                              // 翻转为左上角原点
 
 ## 第二步：放置 shader 文件
 
-在 `Xinle_Player/shaders/` 下创建你的 `.frag` 文件。
+在 `Xinle_Player/res/shaders/` 下创建你的 `.frag` 文件。
 
 ---
 
 ## 第三步：在 effects.json 中声明
 
-编辑 `Xinle_Player/effects/effects.json`，在 `"effects"` 数组末尾添加一项。
+编辑 `Xinle_Player/res/effects/effects.json`，在 `"effects"` 数组末尾添加一项。
 
 ### 使用文件系统路径（推荐，无需改 qrc）
 
 ```json
 {
   "name": "我的特效",
-  "frag": "shaders/my_effect.frag",
+  "frag": "res/shaders/my_effect.frag",
   "iterations": 1,
   "params": [
     {
@@ -138,15 +138,15 @@ uv.y = 1.0 - uv.y;                              // 翻转为左上角原点
 }
 ```
 
-> **注意**：`"frag"` 字段写相对路径（相对于可执行文件）。运行时程序会从文件系统加载，修改 `.frag` 后重新运行即可看到效果，**无需重新编译**。
+> **注意**：`"frag"` 字段写相对路径（相对于 VS 调试工作目录，默认是 `Xinle_Player/` 项目根目录）。运行时程序会从文件系统加载，修改 `.frag` 后重新运行即可看到效果，**无需重新编译**。
 >
-> 但 `effects.json` 本身当前通过 `player.qrc` 嵌入到可执行文件，所以修改 `effects.json` 后仍需要重新编译。
+> 但 `effects.json` 本身当前通过 `res/player.qrc` 嵌入到可执行文件，所以修改 `effects.json` 后仍需要重新编译。
 
 ### 使用资源路径（需改 qrc，编译进程序）
 
 如果你想把 shader 编译进可执行文件：
 
-1. 编辑 `Xinle_Player/player.qrc`，加入：
+1. 编辑 `Xinle_Player/res/player.qrc`，加入：
    ```xml
    <file>shaders/my_effect.frag</file>
    ```
@@ -171,7 +171,7 @@ uv.y = 1.0 - uv.y;                              // 翻转为左上角原点
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `name` | string | 是 | 下拉框中显示的特效名称（中文）。 |
-| `frag` | string | 是 | `.frag` 文件路径。`""` 表示"无特效"。可以是资源路径（`":/Player/shaders/xxx.frag"`）或相对文件系统路径（`"shaders/xxx.frag"`）。 |
+| `frag` | string | 是 | `.frag` 文件路径。`""` 表示"无特效"。可以是资源路径（`":/Player/shaders/xxx.frag"`）或相对文件系统路径（`"res/shaders/xxx.frag"`）。 |
 | `iterations` | int | 否 | 渲染 pass 数，默认 1。典型用法：盒式模糊=2（先水平再垂直）。 |
 | `params` | array | 否 | 参数列表，空数组 `[]` 表示无参数。 |
 | `setup` | string | 否 | 特殊初始化标识。需要 C++ 代码配合时填写（见"特殊 setup"章节）。 |
@@ -238,7 +238,7 @@ void main() {
 
 ### 示例 1：单 pass 带滑块（反色）
 
-`Xinle_Player/shaders/invert.frag`：
+`Xinle_Player/res/shaders/invert.frag`：
 
 ```glsl
 #version 330 core
@@ -272,7 +272,7 @@ void main() {
 
 ### 示例 2：多 pass 特效（盒式模糊）
 
-`Xinle_Player/shaders/boxblur.frag`（节选）：
+`Xinle_Player/res/shaders/boxblur.frag`（节选）：
 
 ```glsl
 uniform bool horiz_blur;
@@ -324,11 +324,11 @@ void main() {
 }
 ```
 
-对应的 `setupMaskEffect()` 函数（在 `Xinle_Player/player.cpp` 中）负责设置 `numPoints`、`pointData`、`isHasChromakey` 等 shader 需要的 uniform。
+对应的 `setupMaskEffect()` 函数（在 `Xinle_Player/src/player.cpp` 中）负责设置 `numPoints`、`pointData`、`isHasChromakey` 等 shader 需要的 uniform。
 
 如果你的特效也需要代码初始化：
 1. 在 `effects.json` 里放一个 `"setup": "my_setup"`。
-2. 在 `player.cpp` 的 `onEffectChanged()` 中的 `setupMaskEffect` 分支旁增加你的逻辑。
+2. 在 `src/player.cpp` 的 `onEffectChanged()` 中的 `setupMaskEffect` 分支旁增加你的逻辑。
 3. 如果参数超出 JSON 表达范围（如数组），在 setup 函数里直接 `params["xxx"] = ...`。
 
 ---
@@ -341,23 +341,25 @@ void main() {
 
 ```
 Xinle_Player/
-├── shaders/
-│   └── my_effect.frag        ← 新建，写 GLSL
-└── effects/
-    └── effects.json          ← 编辑，加 JSON 条目
+└── res/
+    ├── shaders/
+    │   └── my_effect.frag        ← 新建，写 GLSL
+    └── effects/
+        └── effects.json          ← 编辑，加 JSON 条目
 ```
 
-> 修改 `effects.json` 后需要重新编译，因为它当前通过 `player.qrc` 嵌入到可执行文件。
+> 修改 `effects.json` 后需要重新编译，因为它当前通过 `res/player.qrc` 嵌入到可执行文件。
 
 **资源路径（编译进程序）：**
 
 ```
 Xinle_Player/
-├── shaders/
-│   └── my_effect.frag        ← 新建，写 GLSL
-├── effects/
-│   └── effects.json          ← 编辑，加 JSON 条目
-└── player.qrc                ← 编辑，加 <file> 行
+└── res/
+    ├── shaders/
+    │   └── my_effect.frag        ← 新建，写 GLSL
+    ├── effects/
+    │   └── effects.json          ← 编辑，加 JSON 条目
+    └── player.qrc                ← 编辑，加 <file> 行（路径为 res/shaders/xxx.frag）
 ```
 
 以上步骤完成后重新编译即可。未使用 `"setup"` 字段时，无需修改任何 `.cpp`/`.h` 文件。
@@ -366,6 +368,6 @@ Xinle_Player/
 
 ## 参考
 
-- 内置 shader 源码：`Xinle_Player/shaders/invert.frag`、`boxblur.frag`、`mask.frag`
-- 引擎实现：`Xinle_Player/effect.cpp`（uniform 注入）、`Xinle_Player/glwidget.cpp`（FBO ping-pong 管线）
-- 特效配置加载：`Xinle_Player/effectregistry.cpp`
+- 内置 shader 源码：`Xinle_Player/res/shaders/invert.frag`、`Xinle_Player/res/shaders/boxblur.frag`、`Xinle_Player/res/shaders/mask.frag`
+- 引擎实现：`Xinle_Player/src/effect.cpp`（uniform 注入）、`Xinle_Player/src/glwidget.cpp`（FBO ping-pong 管线）
+- 特效配置加载：`Xinle_Player/src/effectregistry.cpp`
