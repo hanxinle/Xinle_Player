@@ -206,49 +206,7 @@ m_glWidget->setEffectIterations(1);
 
 ## 如何扩展
 
-### 添加新的 .frag 特效
-
-1. 在 `shaders/` 下新建 `my.frag`。
-2. 在 `player.qrc` 中注册新文件：
-
-```xml
-<file>shaders/my.frag</file>
-```
-
-3. 在 `effects/effects.json` 中添加特效描述：
-
-```json
-{
-  "name": "我的特效",
-  "frag": ":/Player/shaders/my.frag",
-  "iterations": 1,
-  "params": [
-    {
-      "name": "intensity",
-      "label": "强度",
-      "type": "float",
-      "default": 50,
-      "min": 0,
-      "max": 100
-    }
-  ]
-}
-```
-
-4. 重新编译运行即可在下拉框看到新特效。
-
-当前支持的参数类型：
-
-| 类型 | 说明 | UI 绑定 |
-|------|------|---------|
-| `float` | 浮点数 | 滑块（范围由 min/max 指定） |
-| `int` | 整数 | 滑块（范围由 min/max 指定） |
-| `bool` | 布尔值 | 默认值写入，暂不提供 UI 开关 |
-| `vec2/vec3/vec4` | 向量 | 默认值写入，暂不提供 UI |
-
-### 特殊 setup
-
-如果需要代码初始化（如遮罩的多边形顶点），可在 JSON 中加上 `"setup": "mask"`。Player 会根据 setup 标识调用对应的初始化函数。后续可扩展更多 setup 类型。
+见 [EFFECTS.md](EFFECTS.md)（特效扩展指南），包含完整的 GLSL 编写规范、effects.json 字段说明、参数类型对照、示例和排错指导。
 
 ## 注意事项
 

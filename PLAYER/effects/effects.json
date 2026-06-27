@@ -61,6 +61,21 @@
         }
       ],
       "setup": "mask"
+    },
+    {
+      "name": "我的特效",
+      "frag": "shaders/my_effect.frag",
+      "iterations": 1,
+      "params": [
+        {
+          "name": "intensity",
+          "label": "强度",
+          "type": "float",
+          "default": 80,
+          "min": 0,
+          "max": 100
+        }
+      ]
     }
   ]
 }
