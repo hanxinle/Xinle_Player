@@ -53,6 +53,10 @@ bool VideoDecoder::open(const QString &filePath) {
         return false;
     }
 
+    // 启用多线程帧解码，提升高码率影片的解码性能。
+    m_videoCodecCtx->thread_count = 4;
+    m_videoCodecCtx->thread_type = FF_THREAD_FRAME;
+
     if (avcodec_open2(m_videoCodecCtx, m_videoCodec, nullptr) < 0) {
         emit decodeError(QStringLiteral("无法打开视频解码器。"));
         return false;
@@ -233,6 +237,8 @@ int VideoDecoder::frameQueueSize() const {
 
 void VideoDecoder::run() {
     AVPacket packet;
+    bool hasPendingPacket = false;
+
     while (!isInterruptionRequested()) {
         {
             QMutexLocker lock(&m_stateMutex);
@@ -264,32 +270,46 @@ void VideoDecoder::run() {
             }
         }
 
-        // 音频始终解码；视频队列满时丢弃当前视频包并稍等，避免音频被阻塞。
-        int ret = av_read_frame(m_fmtCtx, &packet);
-        if (ret < 0) {
-            // 文件结束，回到开头循环播放。
-            avformat_seek_file(m_fmtCtx, -1, INT64_MIN, 0, INT64_MAX, 0);
-            {
-                QMutexLocker fqLock(&m_frameQueueMutex);
-                m_frameQueue.clear();
+        // 没有待处理包时继续读取；视频队列满时保留当前包，避免丢包导致参考帧断裂。
+        if (!hasPendingPacket) {
+            int ret = av_read_frame(m_fmtCtx, &packet);
+            if (ret < 0) {
+                // 文件结束，回到开头循环播放。
+                avformat_seek_file(m_fmtCtx, -1, INT64_MIN, 0, INT64_MAX, 0);
+                {
+                    QMutexLocker fqLock(&m_frameQueueMutex);
+                    m_frameQueue.clear();
+                }
+                flushVideoDecoder();
+                flushAudioDecoder();
+                if (m_audioSink && m_audioIODevice) {
+                    m_audioSink->reset();
+                }
+                continue;
             }
-            flushVideoDecoder();
-            flushAudioDecoder();
-            if (m_audioSink && m_audioIODevice) {
-                m_audioSink->reset();
-            }
-            continue;
+            hasPendingPacket = true;
         }
 
         if (packet.stream_index == m_videoStreamIndex) {
             if (frameQueueSize() < MAX_FRAME_QUEUE_SIZE) {
                 decodeVideoPacket(&packet);
+                hasPendingPacket = false;
+                av_packet_unref(&packet);
             } else {
                 msleep(5);
+                // 保留待处理视频包，等待队列腾出空间。
             }
         } else if (packet.stream_index == m_audioStreamIndex) {
             decodeAudioPacket(&packet);
+            hasPendingPacket = false;
+            av_packet_unref(&packet);
+        } else {
+            hasPendingPacket = false;
+            av_packet_unref(&packet);
         }
+    }
+
+    if (hasPendingPacket) {
         av_packet_unref(&packet);
     }
 }
@@ -300,29 +320,28 @@ bool VideoDecoder::decodeVideoPacket(const AVPacket *packet) {
         return false;
     }
 
-    ret = avcodec_receive_frame(m_videoCodecCtx, m_videoFrame);
-    if (ret != 0) {
-        return false;
+    // 循环接收解码器输出的所有帧，避免 B 帧重排序时漏帧。
+    while (avcodec_receive_frame(m_videoCodecCtx, m_videoFrame) == 0) {
+        sws_scale(m_swsCtx, m_videoFrame->data, m_videoFrame->linesize, 0,
+                  m_height, m_rgbaFrame->data, m_rgbaFrame->linesize);
+
+        int bufferSize =
+            av_image_get_buffer_size(AV_PIX_FMT_RGBA, m_width, m_height, 1);
+
+        VideoFrame frame;
+        frame.rgbaData =
+            QByteArray(reinterpret_cast<const char *>(m_rgbaBuffer), bufferSize);
+        frame.width = m_width;
+        frame.height = m_height;
+
+        {
+            QMutexLocker lock(&m_frameQueueMutex);
+            m_frameQueue.enqueue(frame);
+        }
+
+        av_frame_unref(m_videoFrame);
     }
 
-    sws_scale(m_swsCtx, m_videoFrame->data, m_videoFrame->linesize, 0, m_height,
-              m_rgbaFrame->data, m_rgbaFrame->linesize);
-
-    int bufferSize =
-        av_image_get_buffer_size(AV_PIX_FMT_RGBA, m_width, m_height, 1);
-
-    VideoFrame frame;
-    frame.rgbaData =
-        QByteArray(reinterpret_cast<const char *>(m_rgbaBuffer), bufferSize);
-    frame.width = m_width;
-    frame.height = m_height;
-
-    {
-        QMutexLocker lock(&m_frameQueueMutex);
-        m_frameQueue.enqueue(frame);
-    }
-
-    av_frame_unref(m_videoFrame);
     return true;
 }
 
@@ -435,4 +454,6 @@ void VideoDecoder::flushVideoDecoder() {
     while (avcodec_receive_frame(m_videoCodecCtx, m_videoFrame) == 0) {
         av_frame_unref(m_videoFrame);
     }
+    // 清空解码器内部参考帧缓冲，避免 seek/循环后引用旧帧。
+    avcodec_flush_buffers(m_videoCodecCtx);
 }

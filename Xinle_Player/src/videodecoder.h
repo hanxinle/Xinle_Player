@@ -116,7 +116,7 @@ private:
     // 视频帧队列。
     mutable QMutex m_frameQueueMutex;
     QQueue<VideoFrame> m_frameQueue;
-    static constexpr int MAX_FRAME_QUEUE_SIZE = 10;
+    static constexpr int MAX_FRAME_QUEUE_SIZE = 60;
 
     bool m_running = false;
     bool m_playing = false;
