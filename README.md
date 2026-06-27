@@ -1,4 +1,4 @@
-# PLAYER - 基于 Qt6 + FFmpeg + OpenGL 的本地视频播放器
+# Xinle_Player - 基于 Qt6 + FFmpeg + OpenGL 的本地视频播放器
 
 ## 概述
 
@@ -7,14 +7,14 @@
 与 olive 的主要差异：
 
 - olive 使用 Qt 5.12.1 + MSVC 2015 + **传统 OpenGL**（`glBegin/glEnd`、固定管线、内置 shader 变量）。
-- PLAYER 使用 Qt 6.9.1 + MSVC 2022 + **现代 OpenGL Core Profile**（VAO/VBO、`QOpenGLShaderProgram`、显式 vertex attribute）。
+- Xinle_Player 使用 Qt 6.9.1 + MSVC 2022 + **现代 OpenGL Core Profile**（VAO/VBO、`QOpenGLShaderProgram`、显式 vertex attribute）。
 - 音频输出从 olive 的 `QAudioOutput`（Qt 5）改为 `QAudioSink`（Qt 6）。
 - GLSL shader 语法从 `#version 120` 风格迁移到 `#version 330 core`。
 
 ## 项目结构
 
 ```
-demos/PLAYER/PLAYER/
+demos/Xinle_Player/Xinle_Player/
 ├── main.cpp              # 程序入口
 ├── player.h/.cpp         # 主窗口：UI 布局、播放控制、特效选择
 ├── glwidget.h/.cpp       # OpenGL 视频显示控件，负责纹理上传与特效渲染
@@ -29,7 +29,7 @@ demos/PLAYER/PLAYER/
 │   ├── invert.frag       # 反色特效
 │   ├── boxblur.frag      # 盒式模糊（2 pass）
 │   └── mask.frag         # 多边形遮罩
-└── PLAYER.vcxproj        # Visual Studio 工程文件
+└── Xinle_Player.vcxproj        # Visual Studio 工程文件
 ```
 
 ## 架构流程
@@ -194,7 +194,7 @@ m_glWidget->setEffectIterations(1);
 
 ## 与 olive 的对应关系
 
-| 功能 | olive | PLAYER |
+| 功能 | olive | Xinle_Player |
 |-----|---------|--------|
 | 视频解码 | `rendering/cacher.cpp` | `videodecoder.cpp` |
 | 音频输出 | `QAudioOutput` | `QAudioSink` |
