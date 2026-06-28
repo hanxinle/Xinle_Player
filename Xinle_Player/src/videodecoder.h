@@ -40,6 +40,9 @@ public:
     void pause();
     void seek(double seconds);
 
+    // 重置音频输出缓冲。必须在创建 QAudioSink 的线程（主线程）调用。
+    void resetAudioOutput();
+
     // 当前是否正在播放。
     bool isPlaying() const;
 
@@ -61,6 +64,12 @@ public:
     }
     double frameRate() const {
         return m_frameRate;
+    }
+
+    // 当前播放位置（秒）。
+    double currentPosition() const {
+        QMutexLocker lock(&m_stateMutex);
+        return m_currentPosition;
     }
 
 signals:
@@ -95,6 +104,7 @@ private:
     SwsContext *m_swsCtx = nullptr;
     uint8_t *m_rgbaBuffer = nullptr;
     int m_videoStreamIndex = -1;
+    AVRational m_videoTimeBase = {0, 1};
 
     int m_width = 0;
     int m_height = 0;
@@ -118,9 +128,13 @@ private:
     QQueue<VideoFrame> m_frameQueue;
     static constexpr int MAX_FRAME_QUEUE_SIZE = 60;
 
+    // 音频设备锁，保护对 QAudioSink/QIODevice 的 start/stop/reset/suspend/resume/write 操作。
+    mutable QMutex m_audioMutex;
+
     bool m_running = false;
     bool m_playing = false;
     bool m_seekRequested = false;
     double m_seekTarget = 0.0;
+    double m_currentPosition = 0.0;
     mutable QMutex m_stateMutex;
 };

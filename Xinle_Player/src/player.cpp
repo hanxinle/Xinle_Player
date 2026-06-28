@@ -28,7 +28,7 @@ Player::Player(QWidget *parent) : QWidget(parent) {
     m_glWidget = new GLWidget(this);
     mainLayout->addWidget(m_glWidget, 1);
 
-    // 控制按钮。
+    // 控制按钮与进度条。
     auto *controlLayout = new QHBoxLayout();
     controlLayout->setSpacing(8);
 
@@ -36,9 +36,17 @@ Player::Player(QWidget *parent) : QWidget(parent) {
     m_playBtn = new QPushButton(QStringLiteral("播放"), this);
     m_playBtn->setEnabled(false);
 
+    m_progressSlider = new QSlider(Qt::Horizontal, this);
+    m_progressSlider->setRange(0, 0);
+    m_progressSlider->setEnabled(false);
+
+    m_timeLabel = new QLabel(QStringLiteral("00:00 / 00:00"), this);
+    m_timeLabel->setMinimumWidth(110);
+
     controlLayout->addWidget(m_openBtn);
     controlLayout->addWidget(m_playBtn);
-    controlLayout->addStretch();
+    controlLayout->addWidget(m_progressSlider, 1);
+    controlLayout->addWidget(m_timeLabel);
 
     mainLayout->addLayout(controlLayout);
 
@@ -78,6 +86,12 @@ Player::Player(QWidget *parent) : QWidget(parent) {
             this, &Player::onEffectChanged);
     connect(m_effectSlider, &QSlider::valueChanged, this,
             &Player::onEffectParamChanged);
+    connect(m_progressSlider, &QSlider::sliderPressed, this,
+            &Player::onProgressPressed);
+    connect(m_progressSlider, &QSlider::sliderReleased, this,
+            &Player::onProgressReleased);
+    connect(m_progressSlider, &QSlider::sliderMoved, this,
+            &Player::onProgressMoved);
 
     // 默认选中第一项（通常是“无”）。
     if (m_effectCombo->count() > 0) {
@@ -110,8 +124,17 @@ void Player::onOpenFile() {
 
     if (!m_decoder->open(filePath)) {
         m_playBtn->setEnabled(false);
+        m_progressSlider->setEnabled(false);
+        m_progressSlider->setRange(0, 0);
+        m_timeLabel->setText(QStringLiteral("00:00 / 00:00"));
         return;
     }
+
+    int durationMs = static_cast<int>(m_decoder->duration() * 1000.0);
+    m_progressSlider->setRange(0, qMax(0, durationMs));
+    m_progressSlider->setValue(0);
+    m_progressSlider->setEnabled(durationMs > 0);
+    updateTimeLabel(0.0, m_decoder->duration());
 
     int intervalMs = m_decoder->frameRate() > 0.0
                          ? static_cast<int>(1000.0 / m_decoder->frameRate())
@@ -153,6 +176,14 @@ void Player::onVideoTimer() {
     int height = 0;
     if (m_decoder->getVideoFrame(rgbaData, width, height)) {
         m_glWidget->setVideoFrame(rgbaData, width, height);
+    }
+
+    if (!m_seeking && m_decoder->duration() > 0.0) {
+        int positionMs =
+            static_cast<int>(m_decoder->currentPosition() * 1000.0);
+        m_progressSlider->setValue(
+            qBound(0, positionMs, m_progressSlider->maximum()));
+        updateTimeLabel(m_decoder->currentPosition(), m_decoder->duration());
     }
 }
 
@@ -249,6 +280,46 @@ void Player::applyEffectParams(int sliderValue) {
         m_glWidget->setEffectParam(QStringLiteral("mask_blur"),
                                    static_cast<float>(sliderValue));
     }
+}
+
+void Player::onProgressPressed() {
+    m_seeking = true;
+}
+
+void Player::onProgressReleased() {
+    m_seeking = false;
+
+    if (!m_decoder || m_decoder->duration() <= 0.0) {
+        return;
+    }
+
+    double seconds = static_cast<double>(m_progressSlider->value()) / 1000.0;
+    m_decoder->seek(seconds);
+    updateTimeLabel(seconds, m_decoder->duration());
+}
+
+void Player::onProgressMoved(int value) {
+    if (!m_decoder) {
+        return;
+    }
+
+    double seconds = static_cast<double>(value) / 1000.0;
+    updateTimeLabel(seconds, m_decoder->duration());
+}
+
+QString Player::formatTime(double seconds) const {
+    int total = qMax(0, static_cast<int>(seconds + 0.5));
+    int minutes = total / 60;
+    int secs = total % 60;
+    return QStringLiteral("%1:%2")
+        .arg(minutes, 2, 10, QChar('0'))
+        .arg(secs, 2, 10, QChar('0'));
+}
+
+void Player::updateTimeLabel(double position, double duration) const {
+    m_timeLabel->setText(QStringLiteral("%1 / %2")
+                              .arg(formatTime(position))
+                              .arg(formatTime(duration)));
 }
 
 void Player::setupMaskEffect(QMap<QString, QVariant> &params) {

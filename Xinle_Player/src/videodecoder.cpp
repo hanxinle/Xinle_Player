@@ -37,6 +37,7 @@ bool VideoDecoder::open(const QString &filePath) {
     }
 
     AVStream *videoStream = m_fmtCtx->streams[m_videoStreamIndex];
+    m_videoTimeBase = videoStream->time_base;
 
     // 4. 查找视频解码器。
     m_videoCodec = avcodec_find_decoder(videoStream->codecpar->codec_id);
@@ -184,6 +185,8 @@ void VideoDecoder::close() {
     m_frameRate = 0.0;
     m_videoCodec = nullptr;
     m_audioCodec = nullptr;
+    m_currentPosition = 0.0;
+    m_videoTimeBase = {0, 1};
 }
 
 void VideoDecoder::play() {
@@ -193,6 +196,7 @@ void VideoDecoder::play() {
         m_running = true;
         start();
     }
+    QMutexLocker audioLock(&m_audioMutex);
     if (m_audioSink && m_audioIODevice) {
         m_audioSink->resume();
     }
@@ -201,6 +205,7 @@ void VideoDecoder::play() {
 void VideoDecoder::pause() {
     QMutexLocker lock(&m_stateMutex);
     m_playing = false;
+    QMutexLocker audioLock(&m_audioMutex);
     if (m_audioSink && m_audioIODevice) {
         m_audioSink->suspend();
     }
@@ -210,6 +215,16 @@ void VideoDecoder::seek(double seconds) {
     QMutexLocker lock(&m_stateMutex);
     m_seekRequested = true;
     m_seekTarget = qMax(0.0, seconds);
+    m_currentPosition = m_seekTarget;
+}
+
+void VideoDecoder::resetAudioOutput() {
+    QMutexLocker audioLock(&m_audioMutex);
+    if (m_audioSink) {
+        // reset() 在 suspend 状态下可能无法恢复音频，改为 stop + start 彻底重置。
+        m_audioSink->stop();
+        m_audioIODevice = m_audioSink->start();
+    }
 }
 
 bool VideoDecoder::isPlaying() const {
@@ -263,9 +278,6 @@ void VideoDecoder::run() {
                 }
                 flushVideoDecoder();
                 flushAudioDecoder();
-                if (m_audioSink && m_audioIODevice) {
-                    m_audioSink->reset();
-                }
                 continue;
             }
         }
@@ -282,8 +294,9 @@ void VideoDecoder::run() {
                 }
                 flushVideoDecoder();
                 flushAudioDecoder();
-                if (m_audioSink && m_audioIODevice) {
-                    m_audioSink->reset();
+                {
+                    QMutexLocker stateLock(&m_stateMutex);
+                    m_currentPosition = 0.0;
                 }
                 continue;
             }
@@ -339,6 +352,13 @@ bool VideoDecoder::decodeVideoPacket(const AVPacket *packet) {
             m_frameQueue.enqueue(frame);
         }
 
+        // 根据帧时间戳更新当前播放位置。
+        if (m_videoFrame->pts != AV_NOPTS_VALUE &&
+            m_videoTimeBase.den > 0) {
+            QMutexLocker stateLock(&m_stateMutex);
+            m_currentPosition = av_q2d(m_videoTimeBase) * m_videoFrame->pts;
+        }
+
         av_frame_unref(m_videoFrame);
     }
 
@@ -346,6 +366,8 @@ bool VideoDecoder::decodeVideoPacket(const AVPacket *packet) {
 }
 
 bool VideoDecoder::decodeAudioPacket(const AVPacket *packet) {
+    QMutexLocker audioLock(&m_audioMutex);
+
     if (!m_audioCodecCtx || !m_swrCtx || !m_audioIODevice) {
         return false;
     }
@@ -399,6 +421,8 @@ bool VideoDecoder::decodeAudioPacket(const AVPacket *packet) {
 }
 
 void VideoDecoder::initAudioOutput() {
+    QMutexLocker audioLock(&m_audioMutex);
+
     if (m_audioStreamIndex < 0 || !m_audioCodecCtx) {
         return;
     }
@@ -425,6 +449,7 @@ void VideoDecoder::initAudioOutput() {
 }
 
 void VideoDecoder::stopAudioOutput() {
+    QMutexLocker audioLock(&m_audioMutex);
     if (m_audioSink) {
         m_audioSink->stop();
         delete m_audioSink;
@@ -441,6 +466,8 @@ void VideoDecoder::flushAudioDecoder() {
     while (avcodec_receive_frame(m_audioCodecCtx, m_audioFrame) == 0) {
         av_frame_unref(m_audioFrame);
     }
+    // 清空解码器内部状态，避免 seek 后 send_packet 返回 AVERROR_EOF。
+    avcodec_flush_buffers(m_audioCodecCtx);
     if (m_swrCtx) {
         swr_init(m_swrCtx);
     }
