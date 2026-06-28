@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="Player">
+        <file>cover.jpg</file>
         <file>shaders/common.vert</file>
         <file>shaders/pass_through.frag</file>
         <file>shaders/invert.frag</file>

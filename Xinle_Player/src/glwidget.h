@@ -9,6 +9,7 @@
 
 #include <QMatrix4x4>
 #include <QOpenGLFunctions_3_3_Core>
+#include <QPixmap>
 
 /**
  * @brief 基于现代 OpenGL 3.3 Core 的视频显示控件，支持 GLSL 特效。
@@ -80,4 +81,5 @@ private:
     bool m_fboSizeDirty = false;
 
     QMatrix4x4 m_mvp;
+    QPixmap m_coverPixmap;
 };

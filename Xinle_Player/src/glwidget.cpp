@@ -1,8 +1,11 @@
 #include "glwidget.h"
 
 #include <QDebug>
+#include <QPainter>
 
-GLWidget::GLWidget(QWidget *parent) : QOpenGLWidget(parent) {}
+GLWidget::GLWidget(QWidget *parent) : QOpenGLWidget(parent) {
+    m_coverPixmap = QPixmap(QStringLiteral(":/Player/cover.jpg"));
+}
 
 GLWidget::~GLWidget() {
     makeCurrent();
@@ -132,11 +135,20 @@ void GLWidget::resizeGL(int w, int h) {
 }
 
 void GLWidget::paintGL() {
-    glClearColor(0.1f, 0.2f, 0.4f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     if (!m_passThroughProgram || !m_passThroughProgram->isLinked() ||
         m_videoWidth <= 0 || m_videoHeight <= 0) {
+        // 没有视频帧时显示启动封面。
+        if (!m_coverPixmap.isNull()) {
+            QPainter painter(this);
+            painter.drawPixmap(
+                rect(),
+                m_coverPixmap.scaled(rect().size(),
+                                     Qt::KeepAspectRatioByExpanding,
+                                     Qt::SmoothTransformation));
+        }
         return;
     }
 

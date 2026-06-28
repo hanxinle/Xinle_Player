@@ -9,7 +9,7 @@
 Player::Player(QWidget *parent) : QWidget(parent) {
     ui.setupUi(this);
 
-    setWindowTitle(QStringLiteral("OpenGL + FFmpeg Player"));
+    setWindowTitle(QStringLiteral("Xinle Player"));
     resize(960, 640);
 
     // 加载特效配置。
